@@ -480,6 +480,28 @@ LIBRARY_EXPORT int32_t IsCancelled(grpc_labview::gRPCid** id)
 }
 
 //---------------------------------------------------------------------
+//---------------------------------------------------------------------
+LIBRARY_EXPORT int32_t CancelServerCall(grpc_labview::gRPCid** id)
+{
+    try {
+        auto data = (*id)->CastTo<grpc_labview::GenericMethodData>();
+        if (data == nullptr)
+        {
+            return -1;
+        }
+        
+        if (data->_call->IsActive())
+        {
+            data->_call->CancelCall();
+            return 0;
+        }
+        return -2; // Call already finished
+    } catch (const std::exception&) {
+        return grpc_labview::TranslateException();
+    }
+}
+
+//---------------------------------------------------------------------
 // Allows for definition of the LVRT DLL path to be used for callback functions
 // This function should be called prior to any other gRPC functions in this library
    //---------------------------------------------------------------------

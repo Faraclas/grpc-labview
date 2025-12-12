@@ -158,6 +158,7 @@ namespace grpc_labview
         void ReadComplete();
         void SetCallStatusError(std::string errorMessage);
         void SetCallStatusError(grpc::StatusCode statusCode, std::string errorMessage);
+        void CancelCall();
 
     private:
         LabVIEWgRPCServer* _server;
