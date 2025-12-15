@@ -2,6 +2,7 @@
 //---------------------------------------------------------------------
 #include <grpc_server.h>
 #include <lv_message.h>
+#include <logger.h>
 
 //---------------------------------------------------------------------
 //---------------------------------------------------------------------
@@ -28,6 +29,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     std::shared_ptr<MessageMetadata> CallData::FindMetadata(const std::string& name)
     {
+        std::string debug_message = "(event_data) - (CallData::FindMetadata)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         return _server->FindMetadata(name);    
     }
 
@@ -42,6 +45,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void CallFinishedData::Proceed(bool ok)
     {
+        std::string debug_message = "(event_data) - (CallFinishedData::Proceed)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         delete this;
     }
 
@@ -49,8 +54,12 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     bool CallData::Write()
     {
+        std::string debug_message = "(event_data) - (CallData::Write)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         if (IsCancelled())
         {
+            std::string debug_message = "(event_data) - (CallData::Write) - (IsCancelled1)";
+            grpc_labview::logger::LogDebug(debug_message.c_str());
             return false;
         }
         auto wb = _response->SerializeToByteBuffer();
@@ -60,6 +69,8 @@ namespace grpc_labview
         _writeSemaphore.wait();
         if (IsCancelled())
         {
+            std::string debug_message = "(event_data) - (CallData::Write) - (IsCancelled2)";
+            grpc_labview::logger::LogDebug(debug_message.c_str());
             return false;
         }
         return true;
@@ -69,6 +80,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void CallData::SetCallStatusError(std::string errorMessage)
     {
+        std::string debug_message = "(event_data) - (CallData::SetCallStatusError1)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         _callStatus = grpc::Status(grpc::StatusCode::INTERNAL, errorMessage);
     }
 
@@ -76,6 +89,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void CallData::SetCallStatusError(grpc::StatusCode statusCode, std::string errorMessage)
     {
+        std::string debug_message = "(event_data) - (CallData::SetCallStatusError2)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         _callStatus = grpc::Status(statusCode, errorMessage);
     }
 
@@ -83,13 +98,19 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void CallData::Finish()
     {
+        std::string debug_message = "(event_data) - (CallData::Finish)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         if (_status == CallStatus::PendingFinish)
         {
+            std::string debug_message = "(event_data) - (CallData::Finish) - (_status == CallStatus::PendingFinish)";
+            grpc_labview::logger::LogDebug(debug_message.c_str());
             _status = CallStatus::Finish;
             Proceed(false);
         }
         else
         {
+            std::string debug_message = "(event_data) - (CallData::Finish) - (_status == else)";
+            grpc_labview::logger::LogDebug(debug_message.c_str());
             _status = CallStatus::Finish;
             _stream.Finish(_callStatus, this);
         }
@@ -99,6 +120,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     bool CallData::IsCancelled()
     {
+        std::string debug_message = "(event_data) - (CallData::IsCancelled)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         return _ctx.IsCancelled();
     }
 
@@ -106,6 +129,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     bool CallData::IsActive()
     {
+        std::string debug_message = "(event_data) - (CallData::IsActive)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         return !IsCancelled() && _status != CallStatus::Finish && _status != CallStatus::PendingFinish;
     }
 
@@ -113,24 +138,34 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     bool CallData::ReadNext()
     {
+        std::string debug_message = "(event_data) - (CallData::ReadNext)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         if (_requestDataReady)
         {
+            std::string debug_message = "(event_data) - (CallData::ReadNext) - (_requestDataReady)";
+            grpc_labview::logger::LogDebug(debug_message.c_str());
             return true;
         }
         if (IsCancelled())
         {
+            std::string debug_message = "(event_data) - (CallData::ReadNext) - (IsCancelled1)";
+            grpc_labview::logger::LogDebug(debug_message.c_str());
             return false;
         }
         auto tag = new ReadNextTag(this);
         _stream.Read(&_rb, tag);
         if (!tag->Wait())
         {
+            std::string debug_message = "(event_data) - (CallData::ReadNext) - (!tag->Wait)";
+            grpc_labview::logger::LogDebug(debug_message.c_str());
             return false;
         }
         _request->ParseFromByteBuffer(_rb);
         _requestDataReady = true;
         if (IsCancelled())
         {
+            std::string debug_message = "(event_data) - (CallData::ReadNext) - (IsCancelled2)";
+            grpc_labview::logger::LogDebug(debug_message.c_str());
             return false;
         }
         return true;
@@ -140,6 +175,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void CallData::ReadComplete()
     {
+        std::string debug_message = "(event_data) - (CallData::ReadComplete)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         _requestDataReady = false;
     }
 
@@ -147,19 +184,27 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void CallData::Proceed(bool ok)
     {
+        std::string debug_message = "(event_data) - (CallData::Proceed)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         if (!ok)
         {
             if (_status == CallStatus::Writing)
             {
+                std::string debug_message = "(event_data) - (CallData::Proceed) - (_status == CallStatus::Writing)";
+                grpc_labview::logger::LogDebug(debug_message.c_str());
                 _writeSemaphore.notify();
             }
             if (_status != CallStatus::Finish)
             {
+                std::string debug_message = "(event_data) - (CallData::Proceed) - (_status != CallStatus::Finish)";
+                grpc_labview::logger::LogDebug(debug_message.c_str());
                 _status = CallStatus::PendingFinish;
             }
         }
         if (_status == CallStatus::Create)
         {
+            std::string debug_message = "(event_data) - (CallData::Proceed) - (_status == CallStatus::Create)";
+            grpc_labview::logger::LogDebug(debug_message.c_str());
             // As part of the initial CREATE state, we *request* that the system
             // start processing SayHello requests. In this request, "this" acts are
             // the tag uniquely identifying the request (so that different CallData
@@ -171,12 +216,19 @@ namespace grpc_labview
         }
         else if (_status == CallStatus::Read)
         {
+            /*std::string debug_message = "(event_data) - (CallData::Proceed) - (_status == CallStatus::Read)";
+            grpc_labview::logger::LogDebug(debug_message.c_str());*/
+
             // Spawn a new CallData instance to serve new clients while we process
             // the one for this CallData. The instance will deallocate itself as
             // part of its FINISH state.
             new CallData(_server, _service, _cq);
 
             auto name = _ctx.method();
+
+            std::string debug_message = "(event_data) - (CallData::Proceed) - (_status == CallStatus::Read) called for: " + name;
+            grpc_labview::logger::LogDebug(debug_message.c_str());
+
             if (_server->HasRegisteredServerMethod(name) || _server->HasGenericMethodEvent())
             {
                 _stream.Read(&_rb, this);
@@ -192,6 +244,9 @@ namespace grpc_labview
         {
             auto name = _ctx.method();
 
+            std::string debug_message = "(event_data) - (CallData::Proceed) - (_status == CallStatus::Process) called for: " + name;
+            grpc_labview::logger::LogDebug(debug_message.c_str());
+
             LVEventData eventData;
             if (_server->FindEventData(name, eventData) || _server->HasGenericMethodEvent())
             {
@@ -202,6 +257,8 @@ namespace grpc_labview
 
                 if (_request->ParseFromByteBuffer(_rb))
                 {
+                    std::string debug_message = "(event_data) - (CallData::Proceed) - (_status == CallStatus::Read) - (_request->ParseFromByteBuffer)";
+                    grpc_labview::logger::LogDebug(debug_message.c_str());
                     _requestDataReady = true;
                     _methodData = std::make_shared<GenericMethodData>(this, &_ctx, _request, _response);
                     gPointerManager.RegisterPointer(_methodData);
@@ -245,6 +302,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void ReadNextTag::Proceed(bool ok)
     {
+        std::string debug_message = "(event_data) - (ReadNextTag::Proceed)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         _success = ok;
         _readCompleteSemaphore.notify();
     }
@@ -253,6 +312,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     bool ReadNextTag::Wait()
     {
+        std::string debug_message = "(event_data) - (ReadNextTag::Wait)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         _readCompleteSemaphore.wait();
         return _success;
     }
@@ -269,6 +330,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void EventData::WaitForComplete()
     {
+        std::string debug_message = "(event_data) - (EventData::WaitForComplete)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         std::unique_lock<std::mutex> lck(lockMutex);
         while (!_completed) lock.wait(lck);
     }
@@ -277,6 +340,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void EventData::NotifyComplete()
     {
+        std::string debug_message = "(event_data) - (EventData::NotifyComplete)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         std::unique_lock<std::mutex> lck(lockMutex);
         _completed = true;
         lock.notify_all();
@@ -296,6 +361,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     std::shared_ptr<MessageMetadata> GenericMethodData::FindMetadata(const std::string& name)
     {
+        std::string debug_message = "(event_data) - (GenericMethodData::FindMetadata)";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         if (_call != nullptr)
         {
             return _call->FindMetadata(name);

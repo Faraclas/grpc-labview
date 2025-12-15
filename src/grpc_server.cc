@@ -9,6 +9,7 @@
 #include <future>
 #include <grpcpp/impl/server_initializer.h>
 #include "lv_proto_server_reflection_plugin.h"
+#include <logger.h>
 
 //---------------------------------------------------------------------
 //---------------------------------------------------------------------
@@ -50,6 +51,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void LabVIEWgRPCServer::SendEvent(std::string name, gRPCid* data)
     {
+        std::string debug_message = "grpc_server - SendEvent called for event: " + name;
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         if (HasGenericMethodEvent())
         {
             OccurServerEvent(_genericMethodEvent, data, name);
@@ -68,6 +71,8 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     bool LabVIEWgRPCServer::FindEventData(std::string name, LVEventData& data)
     {
+		std::string debug_message = "grpc_server - FindEventData called for event: " + name;
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         auto eventData = _registeredServerMethods.find(name);
         if (eventData != _registeredServerMethods.end())
         {
@@ -139,6 +144,7 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void LabVIEWgRPCServer::HandleRpcs(grpc::ServerCompletionQueue *cq)
     {
+        grpc_labview::logger::LogDebug("grpc_server - HandleRpcs called");
         // Spawn a new CallData instance to serve new clients.
         new CallData(this, _rpcService.get(), cq);
         void *tag; // uniquely identifies a request.

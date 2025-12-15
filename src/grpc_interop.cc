@@ -11,6 +11,7 @@
 #include <thread>
 #include <assert.h>
 #include <feature_toggles.h>
+#include <logger.h>
 
 namespace grpc_labview
 {
@@ -18,6 +19,14 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void OccurServerEvent(LVUserEventRef event, gRPCid* data)
     {
+        grpc_labview::logger::LogDebug("OccurServerEvent(event, data) called");
+        /*auto eventName = (data)->CastTo<grpc_labview::GenericMethodData>();
+        auto metadata = eventName->FindMetadata("fieldName");
+        if (metadata)
+        {
+            std::string fieldName = metadata->fieldName;
+            grpc_labview::logger::LogDebug(fieldName.c_str());
+        }*/
         auto error = PostUserEvent(event, &data);
     }
 
@@ -25,6 +34,16 @@ namespace grpc_labview
     //---------------------------------------------------------------------
     void OccurServerEvent(LVUserEventRef event, gRPCid* data, std::string eventMethodName)
     {
+        std::string debug_message = "OccurServerEvent(event, data, eventMethodName) called";
+        grpc_labview::logger::LogDebug(debug_message.c_str());
+        grpc_labview::logger::LogDebug("OccurServerEvent(event, data) called");
+        /*auto eventName = (data)->CastTo<grpc_labview::GenericMethodData>();
+        auto metadata = eventName->FindMetadata("fieldName");
+        if (metadata)
+        {
+            std::string fieldName = metadata->fieldName;
+            grpc_labview::logger::LogDebug(fieldName.c_str());
+        }*/
         GeneralMethodEventData eventData;
         eventData.methodData = data;
         eventData.methodName = nullptr;
@@ -41,6 +60,7 @@ namespace grpc_labview
 
     std::vector<std::string> SplitString(std::string s, std::string delimiter)
     {
+        grpc_labview::logger::LogDebug("SplitString called");
         size_t pos_start = 0, pos_end, delim_len = delimiter.length();
         std::string token;
         std::vector<std::string> res;
@@ -58,6 +78,7 @@ namespace grpc_labview
 
     std::map<uint32_t, int32_t> CreateMapBetweenLVEnumAndProtoEnumvalues(std::string enumValues)
     {
+        grpc_labview::logger::LogDebug("CreateMapBetweenLVEnumAndProtoEnumvalues called");
         std::map<uint32_t, int32_t> lvEnumToProtoEnum;
         int seqLVEnumIndex = 0;
         for (std::string keyValuePair : SplitString(enumValues, ";"))
@@ -74,6 +95,7 @@ namespace grpc_labview
 
     void MapInsertOrAssign(std::map<int32_t, std::list<uint32_t>>*protoEnumToLVEnum, int protoEnumNumeric, std::list<uint32_t> lvEnumNumericValues)
     {
+        grpc_labview::logger::LogDebug("MapInsertOrAssign called");
         auto existingElement = protoEnumToLVEnum->find(protoEnumNumeric);
         if (existingElement != protoEnumToLVEnum->end())
         {
@@ -86,6 +108,7 @@ namespace grpc_labview
 
     std::map<int32_t, std::list<uint32_t>> CreateMapBetweenProtoEnumAndLVEnumvalues(std::string enumValues)
     {
+        grpc_labview::logger::LogDebug("CreateMapBetweenProtoEnumAndLVEnumvalues called");
         std::map<int32_t, std::list<uint32_t>> protoEnumToLVEnum;
         int seqLVEnumIndex = 0;
         for (std::string keyValuePair : SplitString(enumValues, ";"))
@@ -110,6 +133,7 @@ namespace grpc_labview
 
     std::shared_ptr<EnumMetadata> CreateEnumMetadata2(IMessageElementMetadataOwner* metadataOwner, LVEnumMetadata2* lvMetadata)
     {
+        grpc_labview::logger::LogDebug("CreateEnumMetadata2 called");
         std::shared_ptr<EnumMetadata> enumMetadata(new EnumMetadata());
 
         enumMetadata->messageName = GetLVAsciiString(lvMetadata->messageName);
@@ -132,6 +156,8 @@ int32_t ServerCleanupProc(grpc_labview::gRPCid* serverId);
 LIBRARY_EXPORT int32_t IsFeatureEnabled(const char* featureName, uint8_t* featureEnabled)
 {
     try {
+        std::string debug_message = std::string("IsFeatureEnabled called for feature: ") + (featureName ? featureName : "<null>");
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         *featureEnabled = grpc_labview::FeatureConfig::getInstance().IsFeatureEnabled(featureName);
         return 0;
     } catch (const std::exception&) {
@@ -149,6 +175,9 @@ LIBRARY_EXPORT int32_t LVCreateServer(grpc_labview::gRPCid** id)
         grpc_labview::gPointerManager.RegisterPointer(server);
         *id = server;
         grpc_labview::RegisterCleanupProc(ServerCleanupProc, server);
+        grpc_labview::logger::InitializeLoggerFromEnv();
+        grpc_labview::logger::LogDebug("LVCreateServer called");
+
         return 0;
     } catch (const std::exception&) {
         return grpc_labview::TranslateException();
@@ -160,6 +189,10 @@ LIBRARY_EXPORT int32_t LVCreateServer(grpc_labview::gRPCid** id)
 LIBRARY_EXPORT int32_t LVStartServer(char* address, char* serverCertificatePath, char* serverKeyPath, grpc_labview::gRPCid** id)
 {
     try {
+		std::string desc = "LVStartServer called for address: ";
+        std::string char_str = address;
+        std::string debug_message = desc + char_str;
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         auto server = (*id)->CastTo<grpc_labview::LabVIEWgRPCServer>();
         if (server == nullptr)
         {
@@ -176,6 +209,7 @@ LIBRARY_EXPORT int32_t LVStartServer(char* address, char* serverCertificatePath,
 LIBRARY_EXPORT int32_t LVGetServerListeningPort(grpc_labview::gRPCid** id, int* listeningPort)
 {
     try {
+        grpc_labview::logger::LogDebug("LVGetServerListeningPort called");
         auto server = (*id)->CastTo<grpc_labview::LabVIEWgRPCServer>();
         if (server == nullptr)
         {
@@ -193,6 +227,7 @@ LIBRARY_EXPORT int32_t LVGetServerListeningPort(grpc_labview::gRPCid** id, int* 
 LIBRARY_EXPORT int32_t LVStopServer(grpc_labview::gRPCid** id)
 {
     try {
+        grpc_labview::logger::LogDebug("LVStopServer called");
         auto server = (*id)->CastTo<grpc_labview::LabVIEWgRPCServer>();
         if (server == nullptr)
         {
@@ -210,6 +245,7 @@ LIBRARY_EXPORT int32_t LVStopServer(grpc_labview::gRPCid** id)
 
 int32_t ServerCleanupProc(grpc_labview::gRPCid* serverId)
 {
+	grpc_labview::logger::LogDebug("ServerCleanupProc called");
     return LVStopServer(&serverId);
 }
 
@@ -218,6 +254,7 @@ int32_t ServerCleanupProc(grpc_labview::gRPCid* serverId)
 LIBRARY_EXPORT int32_t RegisterMessageMetadata(grpc_labview::gRPCid** id, grpc_labview::LVMessageMetadata* lvMetadata)
 {
     try {
+        grpc_labview::logger::LogDebug("RegisterMessageMetadata called");
         auto server = (*id)->CastTo<grpc_labview::MessageElementMetadataOwner>();
         if (server == nullptr)
         {
@@ -236,6 +273,8 @@ LIBRARY_EXPORT int32_t RegisterMessageMetadata(grpc_labview::gRPCid** id, grpc_l
 LIBRARY_EXPORT int32_t RegisterMessageMetadata2(grpc_labview::gRPCid** id, grpc_labview::LVMessageMetadata2* lvMetadata)
 {
     try {
+        //lvMetadata->messageName
+        grpc_labview::logger::LogDebug("RegisterMessageMetadata2 called");
         auto server = (*id)->CastTo<grpc_labview::MessageElementMetadataOwner>();
         if (server == nullptr)
         {
@@ -254,6 +293,7 @@ LIBRARY_EXPORT int32_t RegisterMessageMetadata2(grpc_labview::gRPCid** id, grpc_
 LIBRARY_EXPORT int32_t RegisterEnumMetadata2(grpc_labview::gRPCid** id, grpc_labview::LVEnumMetadata2* lvMetadata)
 {
     try {
+        grpc_labview::logger::LogDebug("RegisterEnumMetadata2 called");
         auto server = (*id)->CastTo<grpc_labview::MessageElementMetadataOwner>();
         if (server == nullptr)
         {
@@ -272,6 +312,10 @@ LIBRARY_EXPORT int32_t RegisterEnumMetadata2(grpc_labview::gRPCid** id, grpc_lab
 LIBRARY_EXPORT uint32_t GetLVEnumValueFromProtoValue(grpc_labview::gRPCid** id, const char* enumName, int protoValue, uint32_t* lvEnumValue)
 {
     try {
+		std::string desc = "GetLVEnumValueFromProtoValue called for enum: ";
+		std::string char_str(enumName);
+        std::string debug_message = desc + char_str;
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         auto server = (*id)->CastTo<grpc_labview::MessageElementMetadataOwner>();
         if (server == nullptr)
         {
@@ -291,6 +335,10 @@ LIBRARY_EXPORT uint32_t GetLVEnumValueFromProtoValue(grpc_labview::gRPCid** id, 
 LIBRARY_EXPORT int32_t GetProtoValueFromLVEnumValue(grpc_labview::gRPCid** id, const char* enumName, int lvEnumValue, int32_t* protoValue)
 {
     try {
+		std::string desc = "GetProtoValueFromLVEnumValue called for enum: ";
+		std::string char_str(enumName);
+        std::string debug_message = desc + char_str;
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         auto server = (*id)->CastTo<grpc_labview::MessageElementMetadataOwner>();
         if (server == nullptr)
         {
@@ -310,6 +358,7 @@ LIBRARY_EXPORT int32_t GetProtoValueFromLVEnumValue(grpc_labview::gRPCid** id, c
 LIBRARY_EXPORT int32_t CompleteMetadataRegistration(grpc_labview::gRPCid** id)
 {
     try {
+        grpc_labview::logger::LogDebug("CompleteMetadataRegistration called");
         auto server = (*id)->CastTo<grpc_labview::MessageElementMetadataOwner>();
         if (server == nullptr)
         {
@@ -327,6 +376,10 @@ LIBRARY_EXPORT int32_t CompleteMetadataRegistration(grpc_labview::gRPCid** id)
 LIBRARY_EXPORT int32_t RegisterServerEvent(grpc_labview::gRPCid** id, const char* name, grpc_labview::LVUserEventRef* item, const char* requestMessageName, const char* responseMessageName)
 {
     try {
+		std::string desc = "RegisterServerEvent called for event: ";
+		std::string char_str = name;
+		std::string debug_message = desc + char_str;
+		grpc_labview::logger::LogDebug(debug_message.c_str());
         auto server = (*id)->CastTo<grpc_labview::LabVIEWgRPCServer>();
         if (server == nullptr)
         {
@@ -345,6 +398,7 @@ LIBRARY_EXPORT int32_t RegisterServerEvent(grpc_labview::gRPCid** id, const char
 LIBRARY_EXPORT int32_t RegisterGenericMethodServerEvent(grpc_labview::gRPCid** id, grpc_labview::LVUserEventRef* item)
 {
     try {
+        grpc_labview::logger::LogDebug("RegisterGenericMethodServerEvent called");
         auto server = (*id)->CastTo<grpc_labview::LabVIEWgRPCServer>();
         if (server == nullptr)
         {
@@ -363,6 +417,7 @@ LIBRARY_EXPORT int32_t RegisterGenericMethodServerEvent(grpc_labview::gRPCid** i
 LIBRARY_EXPORT int32_t GetRequestData(grpc_labview::gRPCid** id, int8_t* lvRequest)
 {
     try {
+        grpc_labview::logger::LogDebug("GetRequestData called");
         auto data = (*id)->CastTo<grpc_labview::GenericMethodData>();
         if (data == nullptr)
         {
@@ -384,6 +439,12 @@ LIBRARY_EXPORT int32_t GetRequestData(grpc_labview::gRPCid** id, int8_t* lvReque
                 data->_call->ReadComplete();
                 throw;
             }
+            /*auto metadata = data->FindMetadata("fieldName");
+            if (metadata)
+            {
+                std::string fieldName = metadata->fieldName;
+                grpc_labview::logger::LogDebug(fieldName.c_str());
+            }*/
             data->_call->ReadComplete();
             return 0;
         }
@@ -398,6 +459,7 @@ LIBRARY_EXPORT int32_t GetRequestData(grpc_labview::gRPCid** id, int8_t* lvReque
 LIBRARY_EXPORT int32_t SetResponseData(grpc_labview::gRPCid** id, int8_t* lvRequest)
 {
     try {
+        grpc_labview::logger::LogDebug("SetResponseData called");
         auto data = (*id)->CastTo<grpc_labview::GenericMethodData>();
         if (data == nullptr)
         {
@@ -415,6 +477,12 @@ LIBRARY_EXPORT int32_t SetResponseData(grpc_labview::gRPCid** id, int8_t* lvRequ
         {
             return -2;
         }
+        /*auto metadata = data->FindMetadata("fieldName");
+        if (metadata)
+        {
+            std::string fieldName = metadata->fieldName;
+            grpc_labview::logger::LogDebug(fieldName.c_str());
+        }*/
         return 0;
     } catch (const std::exception&) {
         return grpc_labview::TranslateException();
@@ -426,6 +494,7 @@ LIBRARY_EXPORT int32_t SetResponseData(grpc_labview::gRPCid** id, int8_t* lvRequ
 LIBRARY_EXPORT int32_t CloseServerEvent(grpc_labview::gRPCid** id)
 {
     try {
+        grpc_labview::logger::LogDebug("CloseServerEvent called");
         auto data = (*id)->CastTo<grpc_labview::GenericMethodData>();
         if (data == nullptr)
         {
@@ -436,7 +505,12 @@ LIBRARY_EXPORT int32_t CloseServerEvent(grpc_labview::gRPCid** id)
         {
             return -(1000 + grpc::StatusCode::CANCELLED);
         }
-
+        /*auto metadata = data->FindMetadata("fieldName");
+        if (metadata)
+        {
+            std::string fieldName = metadata->fieldName;
+            grpc_labview::logger::LogDebug(fieldName.c_str());
+        }*/
         data->NotifyComplete();
         data->_call->Finish();
         grpc_labview::gPointerManager.UnregisterPointer(*id);
@@ -451,6 +525,7 @@ LIBRARY_EXPORT int32_t CloseServerEvent(grpc_labview::gRPCid** id)
 LIBRARY_EXPORT int32_t SetCallStatus(grpc_labview::gRPCid** id, int grpcErrorCode, const char* errorMessage)
 {
     try {
+        grpc_labview::logger::LogDebug("SetCallStatus called");
         auto data = (*id)->CastTo<grpc_labview::GenericMethodData>();
         if (data == nullptr)
         {
@@ -468,6 +543,7 @@ LIBRARY_EXPORT int32_t SetCallStatus(grpc_labview::gRPCid** id, int grpcErrorCod
 LIBRARY_EXPORT int32_t IsCancelled(grpc_labview::gRPCid** id)
 {
     try {
+        grpc_labview::logger::LogDebug("IsCancelled called");
         auto data = (*id)->CastTo<grpc_labview::GenericMethodData>();
         if (data == nullptr)
         {
@@ -486,6 +562,10 @@ LIBRARY_EXPORT int32_t IsCancelled(grpc_labview::gRPCid** id)
 LIBRARY_EXPORT int32_t SetLVRTModulePath(const char* modulePath)
 {
     try {
+		std::string desc = "SetLVRTModulePath called with path: ";
+        std::string char_str(modulePath);
+        std::string debug_message = desc + char_str;
+        grpc_labview::logger::LogDebug(debug_message.c_str());
         if (modulePath == nullptr)
         {
             return -1;

@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.10)
 
 cmake_policy(SET CMP0091 NEW)
 
@@ -89,6 +89,7 @@ add_library(labview_grpc_server SHARED
   src/grpc_interop.cc
   src/grpc_load.cc
   src/grpc_server.cc
+  src/logger.cc
   src/lv_interop.cc
   src/lv_message.cc
   src/lv_message_efficient.cc
